@@ -3,231 +3,288 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Coliber — Connected</title>
+<title>Coliber — Connected Smart AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-  /* سبکِ جمع و جور، تم تیره نئونی */
-  body{margin:0;background:linear-gradient(180deg,#0b1117,#071021);font-family:'Vazirmatn',sans-serif;color:#e6f0ff;display:flex;flex-direction:column;height:100vh}
-  .app{max-width:880px;margin:20px auto;flex:1;display:flex;flex-direction:column;gap:12px;padding:16px}
-  .panel{background:rgba(255,255,255,0.03);border-radius:12px;padding:12px;box-shadow:0 6px 30px rgba(0,0,0,0.6)}
-  #chat{height:62vh;overflow:auto;padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(0,0,0,0.18), rgba(4,6,12,0.3))}
-  .msg{display:block;padding:10px 14px;margin:10px 0;border-radius:12px;max-width:78%}
-  .user{margin-left:auto;background:linear-gradient(90deg,#022b3a,#03506f);box-shadow:0 6px 20px rgba(2,43,58,0.25)}
-  .bot{margin-right:auto;background:linear-gradient(90deg,#1b1f3a,#3b2b6f);box-shadow:0 6px 20px rgba(59,43,111,0.12)}
-  #controls{display:flex;gap:8px;align-items:center}
-  input[type="text"], input[type="password"]{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.25);color:inherit}
-  button{padding:10px 14px;border-radius:10px;border:none;background:#00eaff;color:#022;cursor:pointer}
-  .muted{opacity:0.7;font-size:13px}
-  .small{font-size:13px;color:#bcd}
-  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .kbd{background:#00121a;padding:6px 8px;border-radius:8px;font-weight:600}
+  :root{
+    --bg1:#071021; --bg2:#0b1220; --neon:#00eaff; --accent:#ff4dd2;
+    --panel-bg: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:'Vazirmatn',sans-serif; color:#e6f7ff;
+    background: linear-gradient(180deg,var(--bg1),var(--bg2));
+    height:100vh; display:flex; align-items:center; justify-content:center;
+  }
+  .app{ width:94%; max-width:980px; height:92vh; display:flex; flex-direction:column; gap:12px; padding:18px; }
+  .top{ display:flex; justify-content:space-between; align-items:center; gap:12px; background:var(--panel-bg); padding:12px; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.5); }
+  .brand{ font-weight:700; font-size:18px; }
+  .muted{ color:#bcd; font-size:13px; margin-top:4px; }
+  #chat{ flex:1; padding:16px; overflow:auto; border-radius:12px; background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.32)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.02); }
+  .msg{ display:inline-block; padding:12px 14px; margin:10px 0; border-radius:14px; max-width:78%; line-height:1.5; word-break:break-word; opacity:0; transform: translateY(8px); transition: all .28s ease; }
+  .msg.show{ opacity:1; transform: translateY(0); }
+  .user{ margin-left:auto; background: linear-gradient(90deg,#022b3a,#03506f); box-shadow: 0 6px 30px rgba(2,43,58,0.25); color:#eaffff;}
+  .bot{ margin-right:auto; background: linear-gradient(90deg,#2b1b3f,#6835a0); box-shadow: 0 6px 30px rgba(104,53,160,0.12); color:#fff; }
+  .status{ display:flex; gap:8px; align-items:center; }
+  .kbd{ background:rgba(0,0,0,0.25); padding:6px 8px; border-radius:8px; font-weight:700; color:#bfe; }
+  .controls{ display:flex; gap:8px; background:var(--panel-bg); padding:12px; border-radius:12px; align-items:center; }
+  input[type="text"]{ flex:1; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:rgba(0,0,0,0.25); color:inherit; outline:none; font-size:15px; }
+  button{ padding:10px 14px; border-radius:10px; border:none; background:var(--neon); color:#002; font-weight:700; cursor:pointer; }
+  .small{ font-size:13px; color:#bcd; }
+  .hint{ font-size:13px; color:#9cc; margin-left:8px; }
+  /* typing bubble */
+  .typing { display:flex; gap:6px; align-items:center; padding:8px 12px; border-radius:12px; background: rgba(255,255,255,0.03); width:160px; }
+  .dot{ width:8px; height:8px; background:#fff; border-radius:50%; opacity:0.35; animation: blink 1s infinite; }
+  .dot:nth-child(2){ animation-delay: .15s }
+  .dot:nth-child(3){ animation-delay: .3s }
+  @keyframes blink { 0%{opacity:.15} 50%{opacity:1} 100%{opacity:.15} }
+  /* hover effects */
+  .msg:hover{ transform: translateY(-4px) scale(1.01); filter:brightness(1.05) }
+  /* responsive */
+  @media (max-width:560px){
+    .app{ padding:10px }
+    .brand{ font-size:16px }
+  }
 </style>
 </head>
 <body>
-  <div class="app">
-    <div class="panel topbar">
+  <div class="app" role="application">
+    <div class="top">
       <div>
-        <strong>Coliber</strong>
-        <div class="small muted">هوش متصل به ChatGPT — حافظه محلی و یادگیری خودکار</div>
+        <div class="brand">Coliber</div>
+        <div class="muted">هوش متصل به ChatGPT — حافظه محلی، یادگیری خودکار و انیمیشن</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div class="status">
         <button id="setKeyBtn">Set API Key</button>
-        <div class="kbd" id="status">API: ❌</div>
+        <div class="kbd" id="apiStatus">API: ❌</div>
       </div>
     </div>
 
-    <div class="panel" id="chat" role="log" aria-live="polite"></div>
+    <div id="chat" aria-live="polite" role="log"></div>
 
-    <div class="panel" id="controls">
-      <input id="input" type="text" placeholder="هر چیزی بپرس یا بنویس..." />
+    <div class="controls" role="region" aria-label="Controls">
+      <input id="input" type="text" placeholder="سؤال یا پیام بنویس — Enter برای ارسال" autocomplete="off" />
       <button id="send">ارسال</button>
       <button id="teach">یاد بگیر</button>
+      <div class="hint small">فرمت یادگیری: عبارت = پاسخ</div>
     </div>
 
-    <div class="small muted">نکته: برای استفاده عمومی از این صفحه، بهتر است سرور واسط (Node.js) بکار ببری تا کلید در مرورگر افشا نشود.</div>
+    <div class="small" style="margin-top:6px">نکته امنیتی: برای استفاده عمومی از Coliber از سرور واسط استفاده کن تا کلید محفوظ بماند.</div>
   </div>
 
 <script>
-/*
-  Coliber connected — single-file client-side implementation.
-  - Enter your OpenAI API key via "Set API Key" (stored in localStorage)
-  - Coliber checks local memory first; if missing, asks ChatGPT automatically
-  - Saves new answers into local memory for future
-  - WARNING: exposing API key in browser is insecure for public sites.
-*/
+/* ======== Coliber client logic (single HTML file) ========
+   - local memory (localStorage)
+   - automatic ChatGPT query when not found
+   - retry logic, safe feedback, no asking user for meaning
+   - Set API Key button stores key in localStorage
+   - typing animation + storing answers
+   ======================================================== */
 
 const chatEl = document.getElementById('chat');
 const inputEl = document.getElementById('input');
 const sendBtn = document.getElementById('send');
 const teachBtn = document.getElementById('teach');
 const setKeyBtn = document.getElementById('setKeyBtn');
-const statusEl = document.getElementById('status');
+const apiStatus = document.getElementById('apiStatus');
 
-let memory = JSON.parse(localStorage.getItem('coliber_memory_v1')||'{}');
-
-// load API key from localStorage (user must set)
+const MEM_KEY = 'coliber_memory_v_final';
+let memory = JSON.parse(localStorage.getItem(MEM_KEY) || '{}');
 let API_KEY = localStorage.getItem('coliber_api_key') || null;
-updateStatus();
+updateApiStatus();
 
-// helper UI
-function addMessage(text, who='bot'){
+// helper: add message bubble (with optional typing effect)
+function addMessage(text, who='bot', typing=false, typingSpeed=18){
   const div = document.createElement('div');
   div.className = 'msg ' + (who==='user' ? 'user' : 'bot');
-  div.innerText = text;
   chatEl.appendChild(div);
   chatEl.scrollTop = chatEl.scrollHeight;
+
+  if(!typing){
+    div.innerText = text;
+    div.classList.add('show');
+    chatEl.scrollTop = chatEl.scrollHeight;
+    return;
+  }
+
+  // typing simulation
+  let i = 0;
+  const showNext = ()=>{
+    i++;
+    div.innerText = text.slice(0, i);
+    if(!div.classList.contains('show')) div.classList.add('show');
+    chatEl.scrollTop = chatEl.scrollHeight;
+    if(i < text.length) setTimeout(showNext, typingSpeed);
+  };
+  showNext();
 }
 
-// set API key flow (masked input)
+// small helper to show a temporary typing indicator (for UX)
+function showTypingIndicator(){
+  const t = document.createElement('div');
+  t.className = 'msg bot typing';
+  t.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  chatEl.appendChild(t);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return t;
+}
+
+// update API status UI
+function updateApiStatus(){ apiStatus.innerText = API_KEY ? 'API: ✅' : 'API: ❌'; }
+
+// set API key (stored in localStorage for convenience — for public use prefer server proxy)
 setKeyBtn.onclick = ()=>{
-  const k = prompt('کلید API را اینجا وارد کن (امن نگه دار). اگر نمی‌دونی چیه، مراحل رو از OpenAI بگیر.');
-  if(k && k.trim().length>10){
-    API_KEY = k.trim();
+  const key = prompt('کلید OpenAI API را اینجا وارد کن (مخفی نگه دار):');
+  if(key && key.trim().length>10){
+    API_KEY = key.trim();
     localStorage.setItem('coliber_api_key', API_KEY);
-    updateStatus();
-    alert('کلید ذخیره شد در localStorage (فقط روی این دستگاه).');
+    updateApiStatus();
+    alert('کلید ذخیره شد (localStorage).');
   }
 };
 
-function updateStatus(){
-  statusEl.innerText = API_KEY ? 'API: ✅' : 'API: ❌';
-}
-
-// teach button: "یاد بگیر عبارت = پاسخ"
+// teach button: "key = value" into memory
 teachBtn.onclick = ()=>{
   const txt = inputEl.value.trim();
   if(!txt){ inputEl.focus(); return; }
-  // format: X = Y
   const parts = txt.split('=');
   if(parts.length>=2){
     const key = parts[0].trim();
     const val = parts.slice(1).join('=').trim();
     memory[key] = val;
-    localStorage.setItem('coliber_memory_v1', JSON.stringify(memory));
-    addMessage(`یاد گرفتم: «${key}» => «${val}»`, 'bot');
+    try{ localStorage.setItem(MEM_KEY, JSON.stringify(memory)); }catch(e){ console.warn(e); }
+    addMessage(`یاد گرفتم: «${key}» → «${val}»`,'bot');
     inputEl.value = '';
   } else {
-    addMessage('فرمت صحیح: عبارت = معنی یا پاسخ', 'bot');
+    addMessage('فرمت یادگیری: عبارت = پاسخ','bot');
   }
 };
 
-// main send flow
-sendBtn.onclick = async ()=>{
-  const text = inputEl.value.trim();
-  if(!text) return;
-  addMessage(text, 'user'); inputEl.value = '';
-
-  // 1) greeting detection (fast local)
-  if(/^(سلام|درود|hi|hello|چطوری|حالت)/i.test(text)){
-    const replies = [
-      'سلام! حالت چطوره؟ 😊',
-      'سلام رفیق! امروز چطوری؟ ✨',
-      'درود! چه خبره؟ 😎',
-      'سلام! آماده‌ام که کمک کنم 🔥'
-    ];
-    addMessage(replies[Math.floor(Math.random()*replies.length)], 'bot');
-    return;
-  }
-
-  // 2) exact memory match (key contains input)
-  const keyFound = findMemoryKey(text);
-  if(keyFound){
-    addMessage(memory[keyFound], 'bot');
-    return;
-  }
-
-  // 3) meaning request detection
-  if(/معنی|یعنی|چیست|چی میشه/i.test(text)){
-    // ask chatgpt if available; otherwise ask user to teach
-    if(API_KEY) {
-      addMessage('⏳ دارم از منبع می‌پرسم...', 'bot');
-      const ans = await askChatGPT(text);
-      if(ans){
-        addMessage(ans, 'bot');
-        // auto-save short Q→A pair for future (only when reasonable)
-        memory[text] = ans;
-        localStorage.setItem('coliber_memory_v1', JSON.stringify(memory));
-        return;
-      }
-    } else {
-      addMessage('⚠️ من اینو بلد نیستم — ولی تو می‌تونی همین الان معنیشو بهم بگی تا یاد بگیرم 🚀', 'bot');
-      return;
-    }
-  }
-
-  // 4) default: ask ChatGPT if API available, else say learned fallback
-  if(API_KEY){
-    addMessage('⏳ دارم از ChatGPT می‌پرسم و در حافظه ذخیره می‌کنم...', 'bot');
-    const ans = await askChatGPT(text);
-    if(ans){
-      addMessage(ans, 'bot');
-      memory[text] = ans;
-      localStorage.setItem('coliber_memory_v1', JSON.stringify(memory));
-      return;
-    } else {
-      addMessage('⚠️ من اینو هنوز یاد نگرفتم! لطفاً معنیشو بهم بگو 🚀', 'bot');
-      return;
-    }
-  } else {
-    addMessage('⚠️ من اینو هنوز یاد نگرفتم! لطفاً معنیشو بهم بگو 🚀', 'bot');
-  }
-};
-
-// find memory key by fuzzy contains (improved)
+// find memory key with improved fuzzy matching
 function findMemoryKey(input){
-  const q = input.toLowerCase();
-  // exact key
+  const q = input.toLowerCase().trim();
+  if(!q) return null;
+  // exact
   for(const k of Object.keys(memory)){
     if(k.toLowerCase() === q) return k;
   }
-  // contains
+  // contains or token match
   for(const k of Object.keys(memory)){
-    if(q.includes(k.toLowerCase())) return k;
-  }
-  // reverse contains (user asked a phrase that includes key)
-  for(const k of Object.keys(memory)){
-    if(k.toLowerCase().includes(q)) return k;
+    const lk = k.toLowerCase();
+    if(q.includes(lk) || lk.includes(q)) return k;
+    // token intersection
+    const a = q.split(/\s+/), b = lk.split(/\s+/);
+    const common = a.filter(x => b.includes(x));
+    if(common.length >= Math.max(1, Math.floor(Math.min(a.length,b.length)/2))) return k;
   }
   return null;
 }
 
-// call OpenAI Chat Completions (client-side). WARNING: key exposure risk.
-async function askChatGPT(userPrompt){
-  try{
-    const payload = {
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {role:'system', content:'تو Coliber هستی؛ جواب‌ها را ساده، واضح و فارسی بده؛ اگر سوالی برای معنای کلمه است، پاسخ را کوتاه و مثال‌دار بده.'},
-        {role:'user', content: userPrompt}
-      ],
-      max_tokens: 700,
-      temperature: 0.2
-    };
-    const res = await fetch('https://api.openai.com/v1/chat/completions',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization': 'Bearer ' + API_KEY
-      },
-      body: JSON.stringify(payload)
+// robust askChatGPT using either direct OpenAI or proxy (if you set PROXY_URL variable)
+const PROXY_URL = null; // <-- if you deploy a proxy server, put its URL here like 'https://your-proxy.com/api/chat'
+
+async function askChatGPT(prompt){
+  // system-level instruction to make Coliber behave well
+  const systemMsg = `تو Coliber هستی؛ پیام کاربر را تحلیل کن و معنا و پاسخ مناسب را به فارسی، ساده و مستقیم بده.
+  هیچ‌وقت از کاربر نپرس معنیش چیست. اگر مثال یا توضیح لازم است، یک مثال کوتاه بیاور. پاسخ را مختصر و مفید نگه دار.`;
+  // payload
+  const payload = {
+    model: 'gpt-3.5-turbo',
+    messages: [
+      {role:'system', content: systemMsg},
+      {role:'user', content: prompt}
+    ],
+    max_tokens: 700,
+    temperature: 0.15
+  };
+
+  try {
+    // choose endpoint: proxy (preferred for public) or direct OpenAI
+    const endpoint = PROXY_URL ? (PROXY_URL) : 'https://api.openai.com/v1/chat/completions';
+    const headers = { 'Content-Type': 'application/json' };
+    if(!PROXY_URL){
+      if(!API_KEY) throw new Error('NO_API_KEY');
+      headers['Authorization'] = 'Bearer ' + API_KEY;
+    }
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(PROXY_URL ? payload : { ...payload })
     });
     if(!res.ok){
-      console.error('OpenAI error', res.status);
+      console.error('API error', res.status);
       return null;
     }
     const j = await res.json();
-    const content = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+    // support proxy responses that wrap the OpenAI response or direct
+    const content = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || j.result || null;
     return content ? content.trim() : null;
-  }catch(e){
-    console.error(e);
+  } catch(err){
+    console.error('askChatGPT error', err);
     return null;
   }
 }
 
-// handy: press Enter to send
-inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ sendBtn.click(); } });
+// main sender: checks memory -> queries ChatGPT -> saves result
+sendBtn.onclick = async ()=>{
+  const text = inputEl.value.trim();
+  if(!text) return;
+  addMessage(text, 'user');
+  inputEl.value = '';
 
-/* INITIAL GREETING */
-addMessage('سلام! من Coliber هستم — اگه بخوای می‌تونم خودم از ChatGPT بپرسم و جواب رو ذخیره کنم. برای اتصال، دکمه "Set API Key" رو بزن.', 'bot');
+  // 1) memory lookup
+  const memKey = findMemoryKey(text);
+  if(memKey){
+    addMessage(memory[memKey], 'bot', true, 18);
+    return;
+  }
+
+  // 2) if no API key and no proxy => instruct the user to set key
+  if(!API_KEY && !PROXY_URL){
+    addMessage('❌ کلید API تنظیم نشده. برای پاسخ‌دهی خودکار، روی "Set API Key" کلیک کن.', 'bot');
+    return;
+  }
+
+  // 3) ask ChatGPT (with small retry logic)
+  const typingNode = showTypingIndicator();
+  let answer = null;
+  try{
+    answer = await askChatGPT(text);
+    if(!answer || answer.trim().length===0){
+      // retry once
+      answer = await askChatGPT(text);
+    }
+  }catch(e){
+    console.error(e);
+  } finally {
+    // remove typing indicator
+    if(typingNode && typingNode.parentNode) typingNode.parentNode.removeChild(typingNode);
+  }
+
+  if(answer && answer.trim().length>0){
+    // display with typing animation
+    addMessage(answer, 'bot', true, 18);
+    // save to memory (key: user original text -> value: answer)
+    try {
+      memory[text] = answer;
+      localStorage.setItem(MEM_KEY, JSON.stringify(memory));
+    } catch(e){
+      console.warn('localStorage store error', e);
+    }
+    return;
+  } else {
+    // final fallback message (API failed)
+    addMessage('⚠️ متأسفانه پاسخ معتبر نگرفتم — احتمالاً مشکل شبکه یا سرویس. بعداً دوباره تلاش کن.', 'bot');
+    return;
+  }
+};
+
+// allow Enter to send
+inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendBtn.click(); });
+
+// initial greeting
+addMessage('سلام! من Coliber هستم — می‌تونم پیام‌هات رو بفهمم و بدون پرسیدن ازت از ChatGPT جواب بگیرم. برای فعال شدن، Set API Key کن یا از proxy امن استفاده کن. 🌟','bot');
+
 </script>
 </body>
 </html>
