@@ -8,7 +8,7 @@
 body {
   margin:0;
   font-family:'Vazirmatn',sans-serif;
-  background: linear-gradient(135deg,#0d0d20,#1e1e30);
+  background: linear-gradient(135deg,#101020,#1c1c36);
   color:#fff;
   display:flex;
   flex-direction:column;
@@ -18,63 +18,42 @@ body {
 }
 #chat {
   width:90%;
-  max-width:600px;
-  height:65vh;
-  background: rgba(0,0,0,0.3);
+  max-width:700px;
+  height:70vh;
+  background: rgba(0,0,0,0.35);
   overflow:auto;
-  padding:16px;
-  border-radius:14px;
+  padding:20px;
+  border-radius:16px;
   margin-bottom:12px;
-  box-shadow:0 8px 20px rgba(0,0,0,0.6);
+  box-shadow:0 10px 25px rgba(0,0,0,0.7);
 }
 .msg {
   margin:10px 0;
-  padding:12px 14px;
-  border-radius:14px;
-  max-width:75%;
-  line-height:1.5;
+  padding:14px 18px;
+  border-radius:16px;
+  max-width:80%;
+  line-height:1.6;
   word-break:break-word;
   opacity:0;
-  transform:translateY(10px);
+  transform:translateY(12px);
   transition: all .3s ease;
 }
 .msg.show { opacity:1; transform:translateY(0); }
-.user {
-  margin-left:auto;
-  background: linear-gradient(90deg,#022b3a,#03506f);
-  color:#e0ffff;
-}
-.bot {
-  margin-right:auto;
-  background: linear-gradient(90deg,#2b1b3f,#6835a0);
-  color:#fff;
-}
-#inputArea {
-  width:90%;
-  max-width:600px;
-  display:flex;
-  gap:8px;
-}
+.user { margin-left:auto; background: linear-gradient(90deg,#022b3a,#03506f); color:#e0ffff; }
+.bot { margin-right:auto; background: linear-gradient(90deg,#2b1b3f,#6835a0); color:#fff; }
+#inputArea { width:90%; max-width:700px; display:flex; gap:10px; }
 input[type="text"] {
   flex:1;
-  padding:12px;
-  border-radius:10px;
+  padding:14px;
+  border-radius:12px;
   border:none;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.4);
   color:#fff;
-  font-size:15px;
+  font-size:16px;
 }
-button {
-  padding:12px 18px;
-  border-radius:10px;
-  border:none;
-  background:#4caf50;
-  color:#fff;
-  font-weight:700;
-  cursor:pointer;
-}
-.typing { display:flex; gap:6px; align-items:center; padding:8px 12px; border-radius:12px; background: rgba(255,255,255,0.03); width:100px; }
-.dot { width:8px; height:8px; background:#fff; border-radius:50%; opacity:0.35; animation: blink 1s infinite; }
+button { padding:14px 20px; border-radius:12px; border:none; background:#4caf50; color:#fff; font-weight:700; cursor:pointer; }
+.typing { display:flex; gap:8px; align-items:center; padding:10px 14px; border-radius:14px; background: rgba(255,255,255,0.05); width:110px; }
+.dot { width:10px; height:10px; background:#fff; border-radius:50%; opacity:0.35; animation: blink 1s infinite; }
 .dot:nth-child(2){ animation-delay: .15s }
 .dot:nth-child(3){ animation-delay: .3s }
 @keyframes blink { 0%{opacity:.15}50%{opacity:1}100%{opacity:.15} }
@@ -89,7 +68,22 @@ button {
 </div>
 
 <script>
-const API_KEY = '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';
+// ----- دیتابیس نمونه حرفه‌ای داخلی -----
+const knowledgeBase = [
+  {type:'greeting', patterns:['سلام','درود','hi','hello'], response:'سلام! 🌟 من Coliber هستم. حالت چطوره؟'},
+  {type:'reply', patterns:['چطوری','خوبی','حال؟'], response:'مرسی! من عالی هستم 😊 تو چطوری؟'},
+  {type:'science', patterns:['کوانتوم','فیزیک','ریاضی','شیمی','زیست','نجوم'], response:'این موضوع علمی است و می‌توانم توضیح دقیق بدهم.'},
+  {type:'math', patterns:['جمع','تفریق','ضرب','تقسیم','حل معادله','مثلثات','انتگرال'], response:'می‌توانم گام به گام توضیح دهم و مثال بزنم.'},
+  {type:'history', patterns:['تاریخ','انقلاب','ایران','جهان'], response:'می‌توانم شرح تاریخی و تحلیل بدهم.'},
+  {type:'anime', patterns:['ناروتو','وان پیس','بلیچ','جوجوتسو','شیطان کش'], response:'می‌توانم داستان و شخصیت‌ها را توضیح بدهم.'},
+  {type:'capital', patterns:['ایران','فرانسه','انگلیس','ژاپن','آمریکا','آلمان'], response:'این کشور پایتخت معروفی دارد.'},
+  {type:'slang', patterns:['لعنت','خر','مسخره','احمق'], response:'😅 لطفاً محترمانه صحبت کن!'},
+  {type:'creative', patterns:['ساخت داستان','کدنویسی','فایل','پروژه','ویرایش'], response:'می‌توانم متن، داستان، کد و فایل بسازم.'},
+  {type:'learned', patterns:[], response:''} 
+];
+
+let conversationMemory = JSON.parse(localStorage.getItem('coliberMemory') || '[]');
+
 const chat = document.getElementById('chat');
 const inp = document.getElementById('inp');
 
@@ -100,7 +94,7 @@ function addMsg(txt,cls,typing=false){
   chat.scrollTop=chat.scrollHeight;
   if(!typing){ d.innerText=txt; d.classList.add('show'); return; }
   let i=0;
-  const showNext=()=>{i++; d.innerText=txt.slice(0,i); if(!d.classList.contains('show')) d.classList.add('show'); chat.scrollTop=chat.scrollHeight; if(i<txt.length)setTimeout(showNext,18);}
+  const showNext=()=>{i++; d.innerText=txt.slice(0,i); if(!d.classList.contains('show')) d.classList.add('show'); chat.scrollTop=chat.scrollHeight; if(i<txt.length)setTimeout(showNext,5);}
   showNext();
 }
 
@@ -112,38 +106,73 @@ function showTypingIndicator(){
   return t;
 }
 
-async function sendMsg(){
+function findResponse(msg){
+  msg = msg.toLowerCase();
+  for(let item of knowledgeBase){
+    for(let pat of item.patterns){
+      if(msg.includes(pat.toLowerCase())) return item.response;
+    }
+  }
+  return null;
+}
+
+function learnAutomatically(msg){
+  msg = msg.trim();
+  let exists = knowledgeBase.some(item => item.patterns.some(p => msg.includes(p)));
+  if(!exists){
+    if(msg.includes('پایتخت') && msg.split(' ').length>=3){
+      let parts = msg.split(' ');
+      let country = parts[1];
+      let capital = parts[2];
+      knowledgeBase.push({type:'capital', patterns:[country], response:capital});
+      console.log('یاد گرفتم:', country,'=>',capital);
+    } else {
+      knowledgeBase.push({type:'learned', patterns:[msg], response:msg});
+      console.log('یاد گرفتم پیام جدید:', msg);
+    }
+  }
+}
+
+// ----- Text-to-Speech -----
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'fa-IR';
+  utter.pitch = 1;
+  utter.rate = 1;
+  window.speechSynthesis.speak(utter);
+}
+
+function sendMsg(){
   const val = inp.value.trim(); if(!val) return;
   addMsg(val,'user'); inp.value='';
+
+  learnAutomatically(val);
+
   const typingNode = showTypingIndicator();
-  try{
-    const res = await fetch('https://api.openai.com/v1/chat/completions',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+API_KEY
-      },
-      body: JSON.stringify({
-        model:'gpt-3.5-turbo',
-        messages:[{role:'user',content:val}],
-        max_tokens:700,
-        temperature:0.3
-      })
-    });
-    const data = await res.json();
-    const answer = (data.choices && data.choices[0].message.content)?data.choices[0].message.content:'⚠️ پاسخ معتبر نیست';
+
+  setTimeout(()=>{
+    let answer = findResponse(val);
+    if(!answer){
+      const similar = conversationMemory.find(c=>val.includes(c.user.toLowerCase()));
+      answer = similar ? similar.bot : 'متوجه شدم! 😊 برداشت منه: «'+val+'»';
+    }
+
+    conversationMemory.push({user:val, bot:answer});
+    localStorage.setItem('coliberMemory', JSON.stringify(conversationMemory));
+
     if(typingNode && typingNode.parentNode) typingNode.parentNode.removeChild(typingNode);
     addMsg(answer,'bot',true);
-  }catch(e){
-    if(typingNode && typingNode.parentNode) typingNode.parentNode.removeChild(typingNode);
-    addMsg('⚠️ مشکل شبکه یا API','bot');
-  }
+
+    // پخش ویس پاسخ
+    speak(answer);
+  },300);
 }
 
 document.getElementById('send').onclick=sendMsg;
 inp.addEventListener('keydown',e=>{ if(e.key==='Enter') sendMsg(); });
 
-addMsg('سلام! من Coliber هستم 🌟 آماده پاسخگویی','bot');
+addMsg('سلام! من Coliber هستم 🌟 آماده پاسخگویی، خلق محتوا و تولید ویس!','bot');
 </script>
 
 </body>
