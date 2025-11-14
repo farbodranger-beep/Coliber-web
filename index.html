@@ -1,117 +1,105 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<title>Coliber 🌟</title>
-<style>
-body {
-  margin:0; font-family:'Vazirmatn',sans-serif;
-  background: linear-gradient(135deg,#101020,#1c1c36); color:#fff;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh;
-}
-#chat { width:90%; max-width:700px; height:70vh; background: rgba(0,0,0,0.35);
-overflow:auto; padding:20px; border-radius:16px; margin-bottom:12px; box-shadow:0 10px 25px rgba(0,0,0,0.7);}
-.msg { margin:10px 0; padding:14px 18px; border-radius:16px; max-width:80%;
-line-height:1.6; word-break:break-word; opacity:0; transform:translateY(12px); transition: all .3s ease; }
-.msg.show { opacity:1; transform:translateY(0); }
-.user { margin-left:auto; background: linear-gradient(90deg,#022b3a,#03506f); color:#e0ffff; }
-.bot { margin-right:auto; background: linear-gradient(90deg,#2b1b3f,#6835a0); color:#fff; }
-#inputArea { width:90%; max-width:700px; display:flex; gap:10px; }
-input[type="text"] { flex:1; padding:14px; border-radius:12px; border:none; background: rgba(0,0,0,0.4); color:#fff; font-size:16px; }
-button { padding:14px 20px; border-radius:12px; border:none; background:#4caf50; color:#fff; font-weight:700; cursor:pointer; }
-.typing { display:flex; gap:8px; align-items:center; padding:10px 14px; border-radius:14px; background: rgba(255,255,255,0.05); width:110px; }
-.dot { width:10px; height:10px; background:#fff; border-radius:50%; opacity:0.35; animation: blink 1s infinite; }
-.dot:nth-child(2){ animation-delay: .15s }
-.dot:nth-child(3){ animation-delay: .3s }
-@keyframes blink { 0%{opacity:.15}50%{opacity:1}100%{opacity:.15} }
-</style>
-</head>
-<body>
-
-<div id="chat"></div>
-<div id="inputArea">
-<input type="text" id="inp" placeholder="پیامتو بنویس و Enter بزن">
-<button id="send">ارسال</button>
-</div>
-
 <script>
+const SERVER_URL = 'http://localhost:3000/ask'; 
 const chat = document.getElementById('chat');
 const inp = document.getElementById('inp');
 
-// دیتابیس فشرده و ساده Coliber
-const database = {
-  "سلام": "سلام! 😊 من Coliber هستم. حالت چطوره؟",
-  "چطوری": "مرسی! من عالی هستم 😊 تو چطوری؟",
-  "پایتخت ایران": "تهران",
-  "پایتخت فرانسه": "پاریس",
-  "پایتخت ژاپن": "توکیو",
-  "کوچکترین سیاره منظومه شمسی": "مرکوری",
-  "انیمه ناروتو": "یک انیمه ژاپنی معروف درباره نینجاهاست",
-  "انیمه وان پیس": "یک انیمه ژاپنی درباره دزد دریایی لوفی"
-  // میتونی بقیه رو اضافه کنی
-};
-
-// Text-to-Speech فارسی
-function speak(text){
-  if(!('speechSynthesis' in window)) return;
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'fa-IR';
-  utter.rate = 1;
-  utter.pitch = 1;
-  window.speechSynthesis.speak(utter);
-}
-
-// افزودن پیام به چت
 function addMsg(txt,cls,typing=false){
   const d=document.createElement('div');
   d.className='msg '+cls;
   chat.appendChild(d);
   chat.scrollTop=chat.scrollHeight;
-  if(!typing){ d.innerText=txt; d.classList.add('show'); return; }
+
+  // جلوگیری از کرش
+  if (txt.length > 3000) txt = txt.slice(0, 3000) + " ...";
+
+  if(!typing){
+    d.innerText=txt;
+    d.classList.add('show');
+    return;
+  }
+
   let i=0;
-  const showNext=()=>{i++; d.innerText=txt.slice(0,i); if(!d.classList.contains('show')) d.classList.add('show'); chat.scrollTop=chat.scrollHeight; if(i<txt.length)setTimeout(showNext,10);}
+  const showNext=()=>{
+    if(i < txt.length){
+      d.innerText=txt.slice(0, i);
+      i+=3;
+      chat.scrollTop=chat.scrollHeight;
+      requestAnimationFrame(showNext);
+    } else {
+      d.classList.add('show');
+    }
+  };
   showNext();
 }
 
-// تایپینگ
 function showTypingIndicator(){
   const t=document.createElement('div');
   t.className='msg bot typing';
   t.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
-  chat.appendChild(t); chat.scrollTop=chat.scrollHeight;
+  chat.appendChild(t);
+  chat.scrollTop=chat.scrollHeight;
   return t;
 }
 
-// پاسخ‌دهی
-function getAnswer(msg){
-  msg = msg.toLowerCase().trim();
-  for(let key in database){
-    if(msg.includes(key.toLowerCase())){
-      return database[key];
-    }
+// جلوگیری از Crash گفتاری
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window)) return;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'fa-IR';
+    utter.pitch = 1;
+    utter.rate = 1;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
+  }catch{
+    console.warn("speech failed");
   }
-  return "⚠️ متأسفم، اطلاعات کافی ندارم!";
 }
 
-// ارسال پیام
-function sendMsg(){
-  const val = inp.value.trim(); if(!val) return;
-  addMsg(val,'user'); inp.value='';
+async function sendMsg(){
+  const val = inp.value.trim(); 
+  if(!val) return;
+
+  addMsg(val,'user');
+  inp.value='';
+
   const typingNode = showTypingIndicator();
-  setTimeout(()=>{
+
+  try{
+    const res = await fetch(SERVER_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message:val})
+    });
+
+    let data;
+    try{
+      data = await res.json();
+    }catch{
+      throw new Error("JSON parse error");
+    }
+
     if(typingNode && typingNode.parentNode) typingNode.remove();
-    const answer = getAnswer(val);
+
+    let answer = data.answer || '⚠️ پاسخ معتبر نیست';
+
+    // ضد تکرار
+    if (answer.trim() === val.trim()){
+      answer = "باشه انجام شد! ولی تکرار نمی‌کنم. بگو چی میخوای ❤️";
+    }
+
     addMsg(answer,'bot',true);
     speak(answer);
-  },300);
+
+  }catch(e){
+    console.error(e);
+    if(typingNode && typingNode.parentNode) typingNode.remove();
+    addMsg('⚠️ خطا در ارتباط – صفحه فریز نمی‌شود. دوباره امتحان کن.','bot');
+  }
 }
 
 document.getElementById('send').onclick=sendMsg;
 inp.addEventListener('keydown',e=>{ if(e.key==='Enter') sendMsg(); });
 
-// پیام خوش‌آمد
-addMsg("سلام! من Coliber هستم 🌟 آماده پاسخگویی و ویس فارسی!","bot");
+addMsg('سلام! من Coliber هستم 🌟 آماده‌ام هرچی خواستی بپرسی.','bot');
 </script>
-
-</body>
-</html>
